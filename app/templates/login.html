@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Roblox Cookie Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            color: white;
+        }
+        h1 { margin-bottom: 20px; }
+        .token-box {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Добро пожаловать, {{ username }}!</h1>
+        <p>Ваш токен авторизации:</p>
+        <div class="token-box" id="token">{{ token }}</div>
+        <button onclick="copyToken()">📋 Копировать токен</button>
+        <br><br>
+        <button onclick="goToDashboard()">🚀 Перейти в дашборд</button>
+    </div>
+    
+    <script>
+        function copyToken() {
+            navigator.clipboard.writeText(document.getElementById('token').textContent);
+            alert('Токен скопирован!');
+        }
+        function goToDashboard() {
+            localStorage.setItem('auth_token', '{{ token }}');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

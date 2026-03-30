@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Roblox Cookie Manager</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🎮 Roblox Cookie Manager</div>
+        <div class="user-info">
+            <span id="username">Загрузка...</span>
+            <button onclick="logout()">Выйти</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>📊 Всего аккаунтов</h3>
+                <p id="total-accounts">0</p>
+            </div>
+            <div class="stat-card valid">
+                <h3>✅ Валидные</h3>
+                <p id="valid-accounts">0</p>
+            </div>
+            <div class="stat-card invalid">
+                <h3>❌ Мёртвые</h3>
+                <p id="invalid-accounts">0</p>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="actions">
+            <button onclick="document.getElementById('cookie-file').click()">📁 Загрузить куки (.txt)</button>
+            <input type="file" id="cookie-file" hidden accept=".txt" onchange="uploadCookies(this)">
+            
+            <button onclick="document.getElementById('password-file').click()">🔑 Загрузить логины:пароли</button>
+            <input type="file" id="password-file" hidden accept=".txt" onchange="uploadPasswords(this)">
+            
+            <button onclick="checkAllCookies()">🔄 Проверить все куки</button>
+        </div>
+        
+        <!-- Add Single -->
+        <div class="add-single">
+            <h3>Добавить один аккаунт</h3>
+            <input type="text" id="single-cookie" placeholder=".ROBLOSECURITY cookie">
+            <input type="text" id="single-password" placeholder="Пароль (опционально)">
+            <input type="text" id="single-desc" placeholder="Описание">
+            <button onclick="addSingleAccount()">Добавить</button>
+        </div>
+        
+        <!-- Accounts Table -->
+        <table class="accounts-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Описание</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="accounts-body"></tbody>
+        </table>
+    </div>
+    
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
