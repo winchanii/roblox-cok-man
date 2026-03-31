@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # Основное приложение
+  app:
+    build: .
+    container_name: roblox_account_manager
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - roblox_net
+
+  # Discord бот
+  bot:
+    build: .
+    container_name: roblox_discord_bot
+    restart: unless-stopped
+    command: python discord_bot/bot.py
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - app
+    networks:
+      - roblox_net
+
+networks:
+  roblox_net:
+    driver: bridge

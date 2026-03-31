@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Аккаунты - Roblox Account Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-person-badge"></i> Управление аккаунтами</h2>
+    </div>
+</div>
+
+<!-- Кнопки действий -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                    <i class="bi bi-plus-lg"></i> Добавить аккаунт
+                </button>
+                <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#bulkCookiesModal">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Загрузить куки
+                </button>
+                <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#linkPasswordsModal">
+                    <i class="bi bi-key"></i> Привязать логины
+                </button>
+                <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#bulkWithPasswordsModal">
+                    <i class="bi bi-files"></i> Куки + Логины
+                </button>
+                <button class="btn btn-outline-success me-2" onclick="checkAllCookies()">
+                    <i class="bi bi-arrow-repeat"></i> Проверить все
+                </button>
+                <button class="btn btn-outline-danger" onclick="confirmDeleteAll()">
+                    <i class="bi bi-trash"></i> Удалить всё
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Таблица аккаунтов -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-ul"></i> Все аккаунты</span>
+                <span class="badge bg-primary" id="accountCount">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAll"></th>
+                                <th>Username</th>
+                                <th>User ID</th>
+                                <th>Описание</th>
+                                <th>Пароль</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountsTable">
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="spinner-border" role="status"></div>
+                                    <p class="text-muted mt-2">Загрузка...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Добавить аккаунт -->
+<div class="modal fade" id="addAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить аккаунт</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAccountForm">
+                    <div class="mb-3">
+                        <label class="form-label">.ROBLOSECURITY Cookie</label>
+                        <textarea class="form-control" id="cookieInput" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Пароль (необязательно)</label>
+                        <input type="text" class="form-control" id="passwordInput">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <input type="text" class="form-control" id="descriptionInput" placeholder="Основной аккаунт">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="addAccount()">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Массовая загрузка кук -->
+<div class="modal fade" id="bulkCookiesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Загрузить куки из файла</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    Файл должен содержать одну куку на строку
+                </div>
+                <input type="file" class="form-control" id="cookiesFile" accept=".txt">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="uploadCookies()">Загрузить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Привязка логинов -->
+<div class="modal fade" id="linkPasswordsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Привязать логины:пароли</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    Формат: username:password (одна пара на строку)
+                </div>
+                <input type="file" class="form-control" id="passwordsFile" accept=".txt">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="linkPasswords()">Привязать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Куки + Логины -->
+<div class="modal fade" id="bulkWithPasswordsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Загрузить куки + логины</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Файл с куками</label>
+                    <input type="file" class="form-control" id="bulkCookiesFile" accept=".txt">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Файл с логинами:паролями</label>
+                    <input type="file" class="form-control" id="bulkPasswordsFile" accept=".txt">
+                </div>
+                <div class="alert alert-info">
+                    Сервер автоматически свяжет аккаунты по username
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="uploadBulkWithPasswords()">Загрузить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Редактирование описания -->
+<div class="modal fade" id="editDescriptionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать описание</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editAccountId">
+                <div class="mb-3">
+                    <label class="form-label">Описание</label>
+                    <textarea class="form-control" id="editDescriptionInput" rows="3" maxlength="250"></textarea>
+                    <small class="text-muted">Максимум 250 символов</small>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="applyInRoblox" checked>
+                    <label class="form-check-label">Применить в Roblox</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="saveDescription()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let token = localStorage.getItem('token');
+let accounts = [];
+
+if (!token) {
+    window.location.href = '/login';
+}
+
+// Загрузка аккаунтов
+async function loadAccounts() {
+    try {
+        const response = await fetch('/api/accounts', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to load accounts');
+        }
+        
+        const data = await response.json();
+        accounts = data.accounts;
+        
+        document.getElementById('accountCount').textContent = data.total;
+        renderAccountsTable(accounts);
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('accountsTable').innerHTML = 
+            '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки</td></tr>';
+    }
+}
+
+function renderAccountsTable(accounts) {
+    const tbody = document.getElementById('accountsTable');
+    
+    if (accounts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет аккаунтов</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    accounts.forEach(acc => {
+        const statusBadge = acc.is_valid 
+            ? '<span class="badge bg-success">Валиден</span>' 
+            : '<span class="badge bg-danger">Невалиден</span>';
+        const passwordBadge = acc.password 
+            ? '<span class="badge bg-info">Есть</span>' 
+            : '<span class="badge bg-secondary">Нет</span>';
+        
+        html += `
+            <tr>
+                <td><input type="checkbox" class="account-checkbox" value="${acc.id}"></td>
+                <td><strong>${acc.username}</strong></td>
+                <td><code>${acc.user_id_roblox}</code></td>
+                <td>${acc.description || '<span class="text-muted">—</span>'}</td>
+                <td>${passwordBadge}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showCookie(${acc.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="editDescription(${acc.id}, '${acc.description.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAccount(${acc.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+async function addAccount() {
+    const cookie = document.getElementById('cookieInput').value.trim();
+    const password = document.getElementById('passwordInput').value.trim();
+    const description = document.getElementById('descriptionInput').value.trim();
+    
+    if (!cookie) {
+        alert('Введите куку');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('cookie', cookie);
+    if (password) formData.append('password', password);
+    formData.append('description', description);
+    
+    try {
+        const response = await fetch('/api/accounts', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Аккаунт добавлен!');
+            bootstrap.Modal.getInstance(document.getElementById('addAccountModal')).hide();
+            document.getElementById('addAccountForm').reset();
+            loadAccounts();
+        } else {
+            alert('Ошибка: ' + data.detail);
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function uploadCookies() {
+    const file = document.getElementById('cookiesFile').files[0];
+    if (!file) {
+        alert('Выберите файл');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/accounts/bulk-cookies', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        let msg = `Успешно: ${data.success}\nНеудачно: ${data.failed}`;
+        if (data.errors && data.errors.length > 0) {
+            msg += '\n\nОшибки:\n' + data.errors.join('\n');
+        }
+        
+        alert(msg);
+        bootstrap.Modal.getInstance(document.getElementById('bulkCookiesModal')).hide();
+        loadAccounts();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function linkPasswords() {
+    const file = document.getElementById('passwordsFile').files[0];
+    if (!file) {
+        alert('Выберите файл');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/accounts/link-passwords', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        let msg = `Привязано: ${data.success}\nНе найдено: ${data.failed}`;
+        alert(msg);
+        bootstrap.Modal.getInstance(document.getElementById('linkPasswordsModal')).hide();
+        loadAccounts();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function uploadBulkWithPasswords() {
+    const cookiesFile = document.getElementById('bulkCookiesFile').files[0];
+    const passwordsFile = document.getElementById('bulkPasswordsFile').files[0];
+    
+    if (!cookiesFile || !passwordsFile) {
+        alert('Выберите оба файла');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('cookies_file', cookiesFile);
+    formData.append('passwords_file', passwordsFile);
+    
+    try {
+        const response = await fetch('/api/accounts/bulk-with-passwords', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        let msg = `Куки добавлено: ${data.cookies_added}\nПаролей привязано: ${data.passwords_linked}`;
+        if (data.errors && data.errors.length > 0) {
+            msg += '\n\nОшибки (первые 20):\n' + data.errors.slice(0, 10).join('\n');
+        }
+        
+        alert(msg);
+        bootstrap.Modal.getInstance(document.getElementById('bulkWithPasswordsModal')).hide();
+        document.getElementById('bulkCookiesFile').value = '';
+        document.getElementById('bulkPasswordsFile').value = '';
+        loadAccounts();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function showCookie(accountId) {
+    try {
+        const response = await fetch(`/api/accounts/${accountId}/cookie`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        // Показываем в prompt для удобного копирования
+        prompt('Cookie аккаунта (Ctrl+C для копирования):', data.cookie);
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+function editDescription(accountId, currentDesc) {
+    document.getElementById('editAccountId').value = accountId;
+    document.getElementById('editDescriptionInput').value = currentDesc || '';
+    new bootstrap.Modal(document.getElementById('editDescriptionModal')).show();
+}
+
+async function saveDescription() {
+    const accountId = document.getElementById('editAccountId').value;
+    const description = document.getElementById('editDescriptionInput').value.trim();
+    const applyInRoblox = document.getElementById('applyInRoblox').checked;
+    
+    try {
+        const response = await fetch(`/api/accounts/${accountId}/description?apply_in_roblox=${applyInRoblox}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({description})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Описание сохранено!');
+            bootstrap.Modal.getInstance(document.getElementById('editDescriptionModal')).hide();
+            loadAccounts();
+        } else {
+            alert('Ошибка: ' + data.detail);
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function deleteAccount(accountId) {
+    if (!confirm('Удалить этот аккаунт?')) return;
+    
+    try {
+        const response = await fetch(`/api/accounts/${accountId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            loadAccounts();
+        } else {
+            const data = await response.json();
+            alert('Ошибка: ' + data.detail);
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function checkAllCookies() {
+    if (!confirm('Проверить все куки? Это может занять некоторое время.')) return;
+    
+    try {
+        const response = await fetch('/api/accounts/check-all', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        alert(data.message);
+        loadAccounts();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function confirmDeleteAll() {
+    if (!confirm('ВНИМАНИЕ! Это удалит ВСЕ аккаунты безвозвратно. Продолжить?')) return;
+    
+    try {
+        const response = await fetch('/api/accounts/all', {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        alert(`Удалено аккаунтов: ${data.deleted || 0}`);
+        loadAccounts();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// Выделение всех
+document.getElementById('selectAll')?.addEventListener('change', function() {
+    document.querySelectorAll('.account-checkbox').forEach(cb => {
+        cb.checked = this.checked;
+    });
+});
+
+// Загрузка при старте
+loadAccounts();
+</script>
+{% endblock %}

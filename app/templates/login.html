@@ -1,67 +1,70 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход - Roblox Cookie Manager</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .container {
-            background: rgba(255,255,255,0.1);
-            padding: 40px;
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
-            text-align: center;
-            color: white;
-        }
-        h1 { margin-bottom: 20px; }
-        .token-box {
-            background: #0f0f23;
-            padding: 15px;
-            border-radius: 8px;
-            word-break: break-all;
-            margin: 20px 0;
-            font-family: monospace;
-        }
-        button {
-            background: #e94560;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover { background: #ff6b6b; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🎮 Добро пожаловать, {{ username }}!</h1>
-        <p>Ваш токен авторизации:</p>
-        <div class="token-box" id="token">{{ token }}</div>
-        <button onclick="copyToken()">📋 Копировать токен</button>
-        <br><br>
-        <button onclick="goToDashboard()">🚀 Перейти в дашборд</button>
+{% extends "base.html" %}
+
+{% block title %}Вход - Roblox Account Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h4><i class="bi bi-box-arrow-in-right"></i> Вход</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Для входа получите ключ в Discord боте вашего сервера
+                </div>
+                
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="accessKey" class="form-label">Ключ доступа</label>
+                        <input type="text" class="form-control" id="accessKey" required 
+                               placeholder="Введите ваш ключ">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right"></i> Войти
+                    </button>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <a href="/auth/discord" class="btn btn-discord">
+                        <i class="bi bi-discord"></i> Войти через Discord
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
     
-    <script>
-        function copyToken() {
-            navigator.clipboard.writeText(document.getElementById('token').textContent);
-            alert('Токен скопирован!');
-        }
-        function goToDashboard() {
-            localStorage.setItem('auth_token', '{{ token }}');
+    const accessKey = document.getElementById('accessKey').value;
+    const formData = new FormData();
+    formData.append('access_key', accessKey);
+    
+    try {
+        const response = await fetch('/auth/key', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user_id', data.user_id);
             window.location.href = '/';
+        } else {
+            alert('Ошибка: ' + (data.detail || 'Неверный ключ'));
         }
-    </script>
-</body>
-</html>
+    } catch (error) {
+        alert('Ошибка подключения: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

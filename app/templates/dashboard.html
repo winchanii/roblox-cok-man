@@ -1,72 +1,209 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Roblox Cookie Manager</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="logo">🎮 Roblox Cookie Manager</div>
-        <div class="user-info">
-            <span id="username">Загрузка...</span>
-            <button onclick="logout()">Выйти</button>
-        </div>
-    </nav>
-    
-    <div class="container">
-        <!-- Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>📊 Всего аккаунтов</h3>
-                <p id="total-accounts">0</p>
-            </div>
-            <div class="stat-card valid">
-                <h3>✅ Валидные</h3>
-                <p id="valid-accounts">0</p>
-            </div>
-            <div class="stat-card invalid">
-                <h3>❌ Мёртвые</h3>
-                <p id="invalid-accounts">0</p>
-            </div>
-        </div>
-        
-        <!-- Actions -->
-        <div class="actions">
-            <button onclick="document.getElementById('cookie-file').click()">📁 Загрузить куки (.txt)</button>
-            <input type="file" id="cookie-file" hidden accept=".txt" onchange="uploadCookies(this)">
-            
-            <button onclick="document.getElementById('password-file').click()">🔑 Загрузить логины:пароли</button>
-            <input type="file" id="password-file" hidden accept=".txt" onchange="uploadPasswords(this)">
-            
-            <button onclick="checkAllCookies()">🔄 Проверить все куки</button>
-        </div>
-        
-        <!-- Add Single -->
-        <div class="add-single">
-            <h3>Добавить один аккаунт</h3>
-            <input type="text" id="single-cookie" placeholder=".ROBLOSECURITY cookie">
-            <input type="text" id="single-password" placeholder="Пароль (опционально)">
-            <input type="text" id="single-desc" placeholder="Описание">
-            <button onclick="addSingleAccount()">Добавить</button>
-        </div>
-        
-        <!-- Accounts Table -->
-        <table class="accounts-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Описание</th>
-                    <th>Статус</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
-            <tbody id="accounts-body"></tbody>
-        </table>
+{% extends "base.html" %}
+
+{% block title %}Дашборд - Roblox Account Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-speedometer2"></i> Дашборд</h2>
     </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-4" id="statsRow">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3 id="totalAccounts">-</h3>
+                <p>Всего аккаунтов</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3 id="validAccounts">-</h3>
+                <p>Валидные</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h3 id="invalidAccounts">-</h3>
+                <p>Невалидные</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3 id="withPasswords">-</h3>
+                <p>С паролем</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Быстрые действия -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning-charge"></i> Быстрые действия
+            </div>
+            <div class="card-body">
+                <a href="/accounts" class="btn btn-primary me-2">
+                    <i class="bi bi-person-badge"></i> Управление аккаунтами
+                </a>
+                <button class="btn btn-success me-2" onclick="checkAllCookies()">
+                    <i class="bi bi-arrow-repeat"></i> Проверить все куки
+                </button>
+                <button class="btn btn-info me-2" onclick="exportAccounts()">
+                    <i class="bi bi-download"></i> Экспорт аккаунтов
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Последние добавленные -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history"></i> Последние добавленные</span>
+                <a href="/accounts" class="btn btn-sm btn-outline-primary">Все аккаунты</a>
+            </div>
+            <div class="card-body">
+                <div id="recentAccounts">
+                    <div class="text-center text-muted">
+                        <div class="spinner-border" role="status"></div>
+                        <p>Загрузка...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let token = localStorage.getItem('token');
+
+// Проверка авторизации
+if (!token) {
+    window.location.href = '/login';
+}
+
+// Загрузка статистики
+async function loadStats() {
+    try {
+        const response = await fetch('/api/accounts', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to load stats');
+        }
+        
+        const data = await response.json();
+        
+        document.getElementById('totalAccounts').textContent = data.total;
+        document.getElementById('validAccounts').textContent = data.valid_count;
+        document.getElementById('invalidAccounts').textContent = data.invalid_count;
+        
+        // Считаем аккаунты с паролем
+        const withPasswords = data.accounts.filter(a => a.password).length;
+        document.getElementById('withPasswords').textContent = withPasswords;
+        
+        // Показываем последние 5 аккаунтов
+        loadRecentAccounts(data.accounts.slice(0, 5));
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+function loadRecentAccounts(accounts) {
+    const container = document.getElementById('recentAccounts');
     
-    <script src="/static/js/dashboard.js"></script>
-</body>
-</html>
+    if (accounts.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">Нет аккаунтов</p>';
+        return;
+    }
+    
+    let html = '<table class="table table-hover">';
+    html += '<thead><tr><th>Username</th><th>Status</th><th>Добавлен</th></tr></thead><tbody>';
+    
+    accounts.forEach(acc => {
+        const statusClass = acc.is_valid ? 'text-success' : 'text-danger';
+        const statusIcon = acc.is_valid ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+        const date = new Date(acc.created_at).toLocaleDateString('ru-RU');
+        
+        html += `
+            <tr>
+                <td><i class="bi bi-person-circle"></i> ${acc.username}</td>
+                <td><i class="bi ${statusIcon} ${statusClass}"></i></td>
+                <td>${date}</td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+async function checkAllCookies() {
+    if (!confirm('Проверить все куки? Это может занять некоторое время.')) return;
+    
+    try {
+        const response = await fetch('/api/accounts/check-all', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        alert(data.message);
+        loadStats();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function exportAccounts() {
+    try {
+        const response = await fetch('/api/accounts/export/with-passwords', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        // Скачиваем как JSON файл
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `roblox_accounts_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        alert('Ошибка экспорта: ' + error.message);
+    }
+}
+
+// Загружаем при старте
+loadStats();
+</script>
+{% endblock %}

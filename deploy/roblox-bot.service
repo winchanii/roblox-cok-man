@@ -1,0 +1,15 @@
+[Unit]
+Description=Roblox Account Manager Discord Bot
+After=network.target roblox-app.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/roblox-account-manager
+Environment="PATH=/opt/roblox-account-manager/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/roblox-account-manager/venv/bin/python discord_bot/bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
